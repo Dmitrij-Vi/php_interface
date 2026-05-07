@@ -31,7 +31,6 @@ if (isset($_GET['del'])) {
     exit;
 }
 
-// Список договоров
 $contracts = $pdo->query("SELECT c.*, t.company_name, r.room_number, b.address 
                           FROM contracts c 
                           JOIN tenants t USING(tenant_id) 
@@ -40,10 +39,7 @@ $contracts = $pdo->query("SELECT c.*, t.company_name, r.room_number, b.address
                           JOIN buildings b USING(building_id) 
                           ORDER BY c.contract_id DESC")->fetchAll();
 
-// Список арендаторов для выпадающего списка
 $tenants = $pdo->query("SELECT tenant_id, company_name FROM tenants ORDER BY company_name")->fetchAll();
-
-// Список помещений (с адресом) для выпадающего списка
 $rooms_list = $pdo->query("SELECT room_id, CONCAT(b.address, ' пом.', r.room_number) as name 
                            FROM rooms r 
                            JOIN floors f USING(floor_id) 
@@ -58,13 +54,30 @@ if (isset($_GET['edit'])) {
 }
 ?>
 <!DOCTYPE html>
-<html><head><title>Договоры</title><link rel="stylesheet" href="style.css"></head>
+<html>
+<head><title>Договоры</title><link rel="stylesheet" href="style.css"></head>
 <body>
-<div class="menu">🏢 <a href="index.php">Главная</a> | <a href="buildings.php">Здания</a> | <a href="floors.php">Этажи</a> | <a href="rooms.php">Помещения</a> | <a href="tenants.php">Арендаторы</a> | <a href="contracts.php">Договоры</a> | <a href="payments.php">Платежи</a> | <a href="logout.php">Выход</a></div>
+<div class="header">
+    <div class="navbar">
+        <div class="logo">
+            🏢 <span>Бизнес-центр</span>
+        </div>
+        <div class="nav-menu">
+            <a href="index.php" class="nav-link">Главная</a>
+            <a href="buildings.php" class="nav-link">Здания</a>
+            <a href="floors.php" class="nav-link">Этажи</a>
+            <a href="rooms.php" class="nav-link">Помещения</a>
+            <a href="tenants.php" class="nav-link">Арендаторы</a>
+            <a href="contracts.php" class="nav-link active">Договоры</a>
+            <a href="payments.php" class="nav-link">Платежи</a>
+            <a href="#" class="nav-link logout-btn" onclick="showLogoutModal(event)">Выход</a>
+        </div>
+    </div>
+</div>
 <div class="container">
-    <h2>Договоры аренды</h2>
+    <h2>Управление договорами</h2>
     <?php show_msg(); ?>
-
+    
     <?php if ($edit_item): ?>
         <h3>✏️ Редактировать договор</h3>
         <form method="POST">
@@ -126,25 +139,74 @@ if (isset($_GET['edit'])) {
         </form>
         <?php endif; ?>
     <?php endif; ?>
-
+    
     <h3>Список договоров</h3>
-    <table border="1" cellpadding="8">
-        <tr><th>№ договора</th><th>Арендатор</th><th>Помещение</th><th>Период</th><th>Сумма</th><th>Статус</th><th>Действия</th></tr>
-        <?php foreach ($contracts as $c): ?>
-        <tr>
-            <td><?php echo htmlspecialchars($c['contract_number']); ?></td>
-            <td><?php echo htmlspecialchars($c['company_name']); ?></td>
-            <td><?php echo htmlspecialchars($c['address']) . ' пом.' . htmlspecialchars($c['room_number']); ?></td>
-            <td><?php echo $c['start_date'] . ' – ' . $c['end_date']; ?></td>
-            <td><?php echo number_format($c['rent_amount'], 0); ?> ₽</td>
-            <td><?php echo $c['status']; ?></td>
-            <td>
-                <a class="btn" href="?edit=<?php echo $c['contract_id']; ?>">✏️ Редакт.</a>
-                <a class="btn btn-danger" href="?del=<?php echo $c['contract_id']; ?>" onclick="return confirm('Удалить договор?')">🗑️</a>
-            </td>
-        </tr>
-        <?php endforeach; ?>
+    <table>
+        <thead>
+            <tr><th>№ договора</th><th>Арендатор</th><th>Помещение</th><th>Период</th><th>Сумма</th><th>Статус</th><th>Действия</th></tr>
+        </thead>
+        <tbody>
+            <?php foreach ($contracts as $c): ?>
+            <tr>
+                <td><?php echo htmlspecialchars($c['contract_number']); ?></td>
+                <td><?php echo htmlspecialchars($c['company_name']); ?></td>
+                <td><?php echo htmlspecialchars($c['address']) . ' пом.' . htmlspecialchars($c['room_number']); ?></td>
+                <td><?php echo $c['start_date'] . ' – ' . $c['end_date']; ?></td>
+                <td><?php echo number_format($c['rent_amount'], 0); ?> ₽</td>
+                <td><?php echo $c['status']; ?></td>
+                <td>
+                    <a href="?edit=<?php echo $c['contract_id']; ?>" class="btn">✏️ Редакт.</a>
+                    <a href="?del=<?php echo $c['contract_id']; ?>" class="btn btn-danger" onclick="return confirm('Удалить договор?')">🗑️ Удалить</a>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
     </table>
 </div>
+
+<!-- Модальное окно подтверждения выхода -->
+<div id="logoutModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Подтверждение выхода</h3>
+            <span class="modal-close" onclick="closeLogoutModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>⚠️ Вы уверены, что хотите выйти из системы?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-btn modal-btn-cancel" onclick="closeLogoutModal()">❌ Отмена</button>
+            <button class="modal-btn modal-btn-confirm" onclick="confirmLogout()">✅ Выйти</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showLogoutModal(event) {
+    event.preventDefault();
+    document.getElementById('logoutModal').style.display = 'block';
+}
+
+function closeLogoutModal() {
+    document.getElementById('logoutModal').style.display = 'none';
+}
+
+function confirmLogout() {
+    window.location.href = 'logout.php';
+}
+
+window.onclick = function(event) {
+    var modal = document.getElementById('logoutModal');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeLogoutModal();
+    }
+});
+</script>
 </body>
 </html>

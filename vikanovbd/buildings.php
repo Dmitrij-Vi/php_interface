@@ -86,7 +86,7 @@ if (isset($_GET['edit'])) {
             <a href="buildings.php" class="btn">Отмена</a>
         </form>
     <?php else: ?>
-        <h3>➕ Добавить здание</h3>
+        <h3>Добавление зданий</h3>
         <form method="POST">
             <input type="text" name="address" placeholder="Адрес" required>
             <input type="text" name="city" placeholder="Город" required>

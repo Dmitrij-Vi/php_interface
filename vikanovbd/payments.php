@@ -67,7 +67,6 @@ if (isset($_GET['del'])) {
     exit;
 }
 
-// Список платежей
 $payments = $pdo->query("
     SELECT p.*, c.contract_number, t.company_name 
     FROM payments p 
@@ -76,7 +75,6 @@ $payments = $pdo->query("
     ORDER BY p.payment_date DESC
 ")->fetchAll();
 
-// Список договоров для выпадающего списка (показываем все, можно отфильтровать по активным)
 $contracts = $pdo->query("SELECT contract_id, contract_number FROM contracts ORDER BY contract_number")->fetchAll();
 
 $edit_item = null;
@@ -92,13 +90,30 @@ if (isset($_GET['edit'])) {
 }
 ?>
 <!DOCTYPE html>
-<html><head><title>Платежи</title><link rel="stylesheet" href="style.css"></head>
+<html>
+<head><title>Платежи</title><link rel="stylesheet" href="style.css"></head>
 <body>
-<div class="menu">🏢 <a href="index.php">Главная</a> | <a href="buildings.php">Здания</a> | <a href="floors.php">Этажи</a> | <a href="rooms.php">Помещения</a> | <a href="tenants.php">Арендаторы</a> | <a href="contracts.php">Договоры</a> | <a href="payments.php">Платежи</a> | <a href="logout.php">Выход</a></div>
+<div class="header">
+    <div class="navbar">
+        <div class="logo">
+            🏢 <span>Бизнес-центр</span>
+        </div>
+        <div class="nav-menu">
+            <a href="index.php" class="nav-link">Главная</a>
+            <a href="buildings.php" class="nav-link">Здания</a>
+            <a href="floors.php" class="nav-link">Этажи</a>
+            <a href="rooms.php" class="nav-link">Помещения</a>
+            <a href="tenants.php" class="nav-link">Арендаторы</a>
+            <a href="contracts.php" class="nav-link">Договоры</a>
+            <a href="payments.php" class="nav-link active">Платежи</a>
+            <a href="#" class="nav-link logout-btn" onclick="showLogoutModal(event)">Выход</a>
+        </div>
+    </div>
+</div>
 <div class="container">
-    <h2>Платежи по договорам</h2>
+    <h2>Управление платежами</h2>
     <?php show_msg(); ?>
-
+    
     <?php if ($edit_item): ?>
         <h3>✏️ Редактировать платеж</h3>
         <form method="POST">
@@ -146,25 +161,74 @@ if (isset($_GET['edit'])) {
         </form>
         <?php endif; ?>
     <?php endif; ?>
-
+    
     <h3>Список платежей</h3>
-    <table border="1" cellpadding="8">
-        <tr><th>Договор</th><th>Арендатор</th><th>Сумма</th><th>Дата платежа</th><th>Период оплаты</th><th>Метод</th><th>Действия</th></tr>
-        <?php foreach ($payments as $p): ?>
-        <tr>
-            <td><?php echo htmlspecialchars($p['contract_number']); ?></td>
-            <td><?php echo htmlspecialchars($p['company_name']); ?></td>
-            <td><?php echo number_format($p['amount'], 2); ?> ₽</td>
-            <td><?php echo htmlspecialchars($p['payment_date']); ?></td>
-            <td><?php echo $p['payment_period_start'] . ' – ' . $p['payment_period_end']; ?></td>
-            <td><?php echo $p['payment_method']; ?></td>
-            <td>
-                <a class="btn" href="?edit=<?php echo $p['payment_id']; ?>">✏️ Редакт.</a>
-                <a class="btn btn-danger" href="?del=<?php echo $p['payment_id']; ?>" onclick="return confirm('Удалить платеж?')">🗑️</a>
-            </td>
-        </tr>
-        <?php endforeach; ?>
+    <table>
+        <thead>
+            <tr><th>Договор</th><th>Арендатор</th><th>Сумма</th><th>Дата платежа</th><th>Период оплаты</th><th>Метод</th><th>Действия</th></tr>
+        </thead>
+        <tbody>
+            <?php foreach ($payments as $p): ?>
+            <tr>
+                <td><?php echo htmlspecialchars($p['contract_number']); ?></td>
+                <td><?php echo htmlspecialchars($p['company_name']); ?></td>
+                <td><?php echo number_format($p['amount'], 2); ?> ₽</td>
+                <td><?php echo htmlspecialchars($p['payment_date']); ?></td>
+                <td><?php echo $p['payment_period_start'] . ' – ' . $p['payment_period_end']; ?></td>
+                <td><?php echo $p['payment_method']; ?></td>
+                <td>
+                    <a href="?edit=<?php echo $p['payment_id']; ?>" class="btn">✏️ Редакт.</a>
+                    <a href="?del=<?php echo $p['payment_id']; ?>" class="btn btn-danger" onclick="return confirm('Удалить платеж?')">🗑️ Удалить</a>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
     </table>
 </div>
+
+<!-- Модальное окно подтверждения выхода -->
+<div id="logoutModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Подтверждение выхода</h3>
+            <span class="modal-close" onclick="closeLogoutModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>⚠️ Вы уверены, что хотите выйти из системы?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-btn modal-btn-cancel" onclick="closeLogoutModal()">❌ Отмена</button>
+            <button class="modal-btn modal-btn-confirm" onclick="confirmLogout()">✅ Выйти</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showLogoutModal(event) {
+    event.preventDefault();
+    document.getElementById('logoutModal').style.display = 'block';
+}
+
+function closeLogoutModal() {
+    document.getElementById('logoutModal').style.display = 'none';
+}
+
+function confirmLogout() {
+    window.location.href = 'logout.php';
+}
+
+window.onclick = function(event) {
+    var modal = document.getElementById('logoutModal');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeLogoutModal();
+    }
+});
+</script>
 </body>
 </html>

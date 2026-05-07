@@ -111,7 +111,7 @@ if (isset($_GET['edit'])) {
             <a href="rooms.php" class="btn">Отмена</a>
         </form>
     <?php else: ?>
-        <h3>➕ Добавить помещение</h3>
+        <h3>Добавление помещений</h3>
         <?php if (count($floors) == 0): ?>
             <div class="alert alert-danger">Сначала добавьте этажи в разделе "Этажи".</div>
         <?php else: ?>

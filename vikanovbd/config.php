@@ -2,7 +2,7 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 $host = 'localhost';        // или '127.0.0.1'
-$db   = 'arenda_biznezcentr';
+$db   = 'arenda_biznes_center';
 $user = 'admin';
 $pass = 'admin';
 $charset = 'utf8mb4';
